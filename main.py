@@ -21,8 +21,9 @@ class Bunny:
     def render(self):
         glBegin(GL_TRIANGLES)
         glColor3f(1.0, 0.0, 0.0)
-        glVertex3f(0.5, -0.5, 0.0)  # Define second vertex
-        glVertex3f(0.0, 0.5, 0.0)  # Define third vertex
+        glVertex3f(-0.5, -0.5, 0.0)
+        glVertex3f(0.5, -0.5, 0.0)
+        glVertex3f(0.0, 0.5, 0.0)
         glEnd()  # End rendering triangle primitives
 
 
@@ -44,8 +45,11 @@ class Bunny:
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
+    glTranslatef(0.0, 0.0, -3.0)  # Move the triangle into the view
     bunbun.render()
     glutSwapBuffers()
+
 
 if __name__ == "__main__":
     glutInit()
@@ -62,7 +66,6 @@ if __name__ == "__main__":
     glLoadIdentity()
 
     bunbun = Bunny("bunny_high.txt")  # Loads it in.
-    bunbun.render()
 
     glutDisplayFunc(display)
     glutMainLoop()
