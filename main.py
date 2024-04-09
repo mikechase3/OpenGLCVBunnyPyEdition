@@ -1,7 +1,7 @@
 # This is a sample Python script.
 import typing
+import numpy as np
 from typing import Tuple
-from Data import Data
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -9,7 +9,8 @@ from OpenGL.GLU import *
 from Data import Data
 
 
-# Tutorials, not GLUT but not needed?
+
+
 class Bunny:
     """
     Implements how we display the bunny model.
@@ -20,11 +21,13 @@ class Bunny:
 
     def render(self):
         glBegin(GL_TRIANGLES)
-        glColor3f(1.0, 0.0, 0.0)
-        glVertex3f(-0.5, -0.5, 0.0)
-        glVertex3f(0.5, -0.5, 0.0)
-        glVertex3f(0.0, 0.5, 0.0)
-        glEnd()  # End rendering triangle primitives
+        for face in self.data.iterFaces():
+            for i in face:
+                # Subtract one apparently b/c obj indices start at 1.
+                vertex = self.data.vertices[i - 1]
+                glColor3f(1.0, 0.0, 0.0)
+                glVertex3f(vertex[0], vertex[1], vertex[2])
+        glEnd()
 
 
     def translate(self, x: float, y: float, z: float):

@@ -41,6 +41,11 @@ class Data:
 
     def __iter__(self):
         return iter(self.vertices + self.faces)
+    def iterVertices(self):
+        return iter(self.vertices)
+
+    def iterFaces(self):
+        return iter(self.faces)
 
     # Getters/Adders for our data.
     # It's also an interactive interface for debugging.
