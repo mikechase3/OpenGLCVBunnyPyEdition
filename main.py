@@ -49,7 +49,7 @@ class Bunny:
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    glTranslatef(0.0, 0.0, -3.0)  # Move the triangle into the view
+    glTranslatef(0.0, 0.0, -1.0)  # Move the triangle into the view
     bunbun.render()
     glutSwapBuffers()
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     glClearColor(0.0, 0.0, 0.0, 1.0)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(45, 800/600, 0.1, 100)
+    gluPerspective(80, 800/600, 0.1, 100)  # fov, resolution, near/far clippings plane
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
