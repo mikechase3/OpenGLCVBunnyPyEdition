@@ -1,3 +1,4 @@
+import sys
 import typing
 import numpy as np
 import time
@@ -9,8 +10,6 @@ from OpenGL.GLU import *
 from Data import Data
 
 
-
-
 class Bunny:
     """
     Implements how we display the bunny model.
@@ -20,7 +19,7 @@ class Bunny:
         self.data = Data(filename)
         self.inMeshVersion: bool = False
         self.inArbitraryLineMode: bool = False
-        self.inTranslateMode: bool = False
+        self.rotationMode: bool = True  # Set rotationMode to True by default
 
     def render(self):
         if self.inMeshVersion:
@@ -57,26 +56,28 @@ class Bunny:
         translation_matrix = self.create_translation_matrix(x, y, z)
 
         # Apply the translation matrix to all vertices
-        translated_vertices = []
-        for vertex in self.data.vertices:
-            vertex_4d = np.append(vertex, 1)  # 3D vertex => 4d by appending 1.
+        for i in range(len(self.data.vertices)):
+            vertex_4d = np.append(self.data.vertices[i], 1)  # 3D vertex => 4d by appending 1.
             translated_vertex = np.dot(translation_matrix, vertex_4d)  # Dot w/ translation matrix.
-            translated_vertices.append(translated_vertex)
-        self.data.vertices = translated_vertices  # OVERWRITES original list.
-    def rotate(self, angle, axis):
+            self.data.vertices[i] = translated_vertex[:3]  # Update the vertex in-place
+
+        # Calculate and print the new centroid
+        new_centroid = self.calculate_centroid()
+        print(f"New centroid: {new_centroid}")
+
+    def apply_rotation(self, angle, axis):
         pass
         # Create rotation matrix using Rodrigues' rotation formula
         # Apply rotation matrix to all vertices
-
 
     def handle_key_press(self, key, x, y):
         '''
         In GLUT, you can register a keyboard callback function using glutKeyboardFunc. This function will be called whenever a key is pressed. The callback function should take two arguments: the key that was pressed and the x and y coordinates of the mouse at the time the key was pressed.  In your case, you want to toggle the inMeshVersion attribute of your Bunny object when the m or M key is pressed. You can do this by defining a method in your Bunny class that changes the value of inMeshVersion, and then passing this method to glutKeyboardFunc.
         :return:
         '''
-        print(f"Before glutGetModifiers in handle_key_press: {time.time()}")
+        # print(f"Before glutGetModifiers in handle_key_press: {time.time()}")
         modifiers = glutGetModifiers()
-        print(f"After glutGetModifiers in handle_key_press: {time.time()}")
+        # print(f"After glutGetModifiers in handle_key_press: {time.time()}")
 
         if key == b'm' or key == b'M':
             self.inMeshVersion = not self.inMeshVersion
@@ -85,32 +86,44 @@ class Bunny:
             self.inArbitraryLineMode = False
         if key == b'1':
             self.inArbitraryLineMode = True
+        if key == b'\x1b':  # ASCII value for escape key (AI GENERATED)
+            sys.exit(0)  # Exit the program on ESC key press
 
+        if key == b'\x20':  # ASCII value for space bar
+            # Reset the translation
+            if self.rotationMode == False:
+                self.rotationMode = True
+            elif self.rotationMode == True:
+                self.rotationMode = False
+
+        # TODO: Fix Shift Not Working. (Use Space Instead For now)
+        sys.stderr.write("Notice. def handle_key_press won't support shift; use space to toggle instead\n")
         if modifiers == GLUT_ACTIVE_SHIFT:
             print("ACTIVATE Translate Mode")
-        else:
-            self.inTranslateMode = False
+            self.rotationMode = False
 
     def handle_mouse_motion(self, x, y):
         '''
         This function will be called whenever the mouse moves within the window while one or more mouse buttons are pressed.
         :return:
         '''
-        print(f"Before glutGetModifiers in handle_mouse_motion: {time.time()}")
-        modifiers = glutGetModifiers()
-        print(f"After glutGetModifiers in handle_mouse_motion: {time.time()}")
-        # rest of your code...
-        if modifiers == GLUT_ACTIVE_SHIFT:
-            self.inTranslateMode = True
-            # print("ACTIVATE Translate Mode")
+        if self.rotationMode:
+            # Apply rotation based on mouse movement
+            self.apply_rotation(x / 100.0, (0, 1, 0))
         else:
-            self.inTranslateMode = False
-            # print("Deactivated Translate Mode")
+            # Apply transition based on mouse movement
+            self.apply_translation(x / 10000.0, y / 10000.0, 0)
+        glutPostRedisplay()
+    def handle_key_up(self, key, x, y):
+        if key == GLUT_ACTIVE_SHIFT:
+            self.rotationMode = True
 
-        if self.inTranslateMode:
-            # Apply translation based on mouse movement (scaled down by 100x)
-            self.apply_translation(x / 10.0, y / 10.0, 0)
-            glutPostRedisplay()
+    def calculate_centroid(self):
+        """Calculate the centroid of the model."""
+        vertices = np.array(self.data.vertices)
+        centroid = vertices.mean(axis=0)
+        return centroid
+
 
 
 def display():
@@ -123,7 +136,6 @@ def display():
 
     bunbun.render()
     glutSwapBuffers()
-
 
 
 if __name__ == "__main__":
@@ -154,7 +166,7 @@ if __name__ == "__main__":
     glLoadIdentity()
 
     # Set up a perspective projection matrix
-    gluPerspective(45, 800/600, 0.1, 100)  # fov, aspect ratio, near/far clipping plane
+    gluPerspective(45, 800 / 600, 0.1, 100)  # fov, aspect ratio, near/far clipping plane
 
     # Switch back to model-view matrix mode
     glMatrixMode(GL_MODELVIEW)
@@ -165,8 +177,11 @@ if __name__ == "__main__":
     # Create a Bunny object
     bunbun = Bunny("bunny_high.txt")  # Loads from obj
 
-    # Register the keyboard callback function
+    # Register the keyboard callback function for key press events
     glutKeyboardFunc(bunbun.handle_key_press)
+
+    # Register the keyboard callback function for key release events
+    glutKeyboardUpFunc(bunbun.handle_key_up)
 
     # Register the mouse motion callback function
     glutMotionFunc(bunbun.handle_mouse_motion)
