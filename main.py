@@ -20,6 +20,8 @@ class Bunny:
         self.inMeshVersion: bool = False
         self.inArbitraryLineMode: bool = False
         self.rotationMode: bool = True  # Set rotationMode to True by default
+        self.last_mouse_x = 0
+        self.last_mouse_y = 0
 
     def render(self):
         if self.inMeshVersion:
@@ -63,12 +65,25 @@ class Bunny:
 
         # Calculate and print the new centroid
         new_centroid = self.calculate_centroid()
-        print(f"New centroid: {new_centroid}")
+        # print(f"New centroid: {new_centroid}")
 
     def apply_rotation(self, angle, axis):
-        pass
-        # Create rotation matrix using Rodrigues' rotation formula
-        # Apply rotation matrix to all vertices
+        c = np.cos(angle)
+        s = np.sin(angle)
+        t = 1.0 - c
+
+        x, y, z = axis
+
+        # Create the rotation matrix
+        rotation_matrix = np.array([
+            [t * x * x + c, t * x * y - z * s, t * x * z + y * s],
+            [t * x * y + z * s, t * y * y + c, t * y * z - x * s],
+            [t * x * z - y * s, t * y * z + x * s, t * z * z + c]
+        ])
+
+        # Apply the rotation matrix to all vertices
+        for i in range(len(self.data.vertices)):
+            self.data.vertices[i] = np.dot(rotation_matrix, self.data.vertices[i])
 
     def handle_key_press(self, key, x, y):
         '''
@@ -107,13 +122,22 @@ class Bunny:
         This function will be called whenever the mouse moves within the window while one or more mouse buttons are pressed.
         :return:
         '''
+        dx = x - self.last_mouse_x
+        dy = self.last_mouse_y - y  # Invert the y-coordinate
+
         if self.rotationMode:
             # Apply rotation based on mouse movement
-            self.apply_rotation(x / 100.0, (0, 1, 0))
+            self.apply_rotation(dx / 100.0, (0, 1, 0))
         else:
             # Apply transition based on mouse movement
-            self.apply_translation(x / 10000.0, y / 10000.0, 0)
+            self.apply_translation(dx / 1000.0, dy / 1000.0, 0)
+            # print("DEBUG: x:{} y: {}".format(dx, dy))
+
+        self.last_mouse_x = x
+        self.last_mouse_y = y
+
         glutPostRedisplay()
+
     def handle_key_up(self, key, x, y):
         if key == GLUT_ACTIVE_SHIFT:
             self.rotationMode = True
