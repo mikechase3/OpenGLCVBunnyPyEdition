@@ -67,7 +67,18 @@ class Bunny:
         new_centroid = self.calculate_centroid()
         # print(f"New centroid: {new_centroid}")
 
-    def apply_rotation(self, angle, axis):
+    def apply_rotation_originToAxis(self, angle: float, axis: np.ndarray) -> None:
+        """
+        Applies a rotation to all vertices of the bunny model.
+
+        Args:
+            angle: The angle of rotation in radians.
+            axis: A unit vector representing the axis of rotation.
+                  This should be a numpy array of shape (3x1)
+
+        Returns:
+            None (modifies the object in-place)
+        """
         c = np.cos(angle)
         s = np.sin(angle)
         t = 1.0 - c
@@ -117,7 +128,8 @@ class Bunny:
             print("ACTIVATE Translate Mode")
             self.rotationMode = False
 
-    def handle_mouse_motion(self, x, y):
+
+    def old_handle_mouse_motion(self, x, y):
         '''
         This function will be called whenever the mouse moves within the window while one or more mouse buttons are pressed.
         :return:
@@ -127,9 +139,11 @@ class Bunny:
 
         if self.rotationMode:
             # Apply rotation based on mouse movement
-            self.apply_rotation(dx / 100.0, (0, 1, 0))
+            upVector = np.array[0, 1, 0]
+            self.apply_rotation_originToAxis(dx / 100.0, upVector)
         else:
             # Apply transition based on mouse movement
+
             self.apply_translation(dx / 1000.0, dy / 1000.0, 0)
             # print("DEBUG: x:{} y: {}".format(dx, dy))
 
@@ -138,9 +152,26 @@ class Bunny:
 
         glutPostRedisplay()
 
-    def handle_key_up(self, key, x, y):
-        if key == GLUT_ACTIVE_SHIFT:
-            self.rotationMode = True
+    def new_handle_mouse_motion(self, x: int, y: int):
+        """
+        Handles mouse motion events, updating the object's rotation or translation
+        depending on the current mode.
+
+        Args:
+            x: The current X-coordinate of the mouse.
+            y: The current Y-coordinate of the mouse.
+        """
+        dx = x - self.last_mouse_x
+        dy = self.last_mouse_y - y
+
+        if self.rotationMode:
+            self.apply_rotation_from_mouse_delta(dx, dy)
+        else:
+            self.apply_translation_from_mouse_delta(dx, dy)
+
+        self.last_mouse_x = x
+        self.last_mouse_y = y
+        glutPostRedisplay()
 
     def calculate_centroid(self):
         """Calculate the centroid of the model."""
@@ -148,13 +179,77 @@ class Bunny:
         centroid = vertices.mean(axis=0)
         return centroid
 
+    def create_rotation_matrix(self, axis: np.ndarray, angle: float) -> np.ndarray:
+        """
+        Creates a 4x4 rotation matrix around the given axis by the specified angle.
+
+        Args:
+            axis: A normalized 3D vector representing the axis of rotation.
+            angle: The rotation angle in radians.
+
+        Returns:
+            A 4x4 NumPy array representing the rotation matrix.
+        """
+        # Implement using Rodrigues' rotation formula: https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+        # ...
+        return rotation_matrix
+
+    def apply_rotation_from_mouse_delta(self, dx: float, dy: float):
+        """
+        Applies a rotation to the object based on the change in mouse coordinates.
+
+        Args:
+            dx: The change in mouse position along the X-axis.
+            dy: The change in mouse position along the Y-axis.
+        """
+        if self.inArbitraryLineMode:
+            # TODO: Handle rotation for arbitrary line mode.
+            pass
+        else:
+            # Rotation around screen axes (simpler case for demonstration)
+            axis = self.calculate_rotation_axis(dx, dy)  # Let's assume this gives a normalized axis vector
+            angle = self.calculate_rotation_angle(dx, dy)
+
+            # Create rotation matrix directly (quaternion conversion can be added later)
+            rotation_matrix = self.create_rotation_matrix(axis, angle)
+
+            # Apply transformation to vertices
+            center = self.calculate_centroid()
+            for i in range(len(self.data.vertices)):
+                vertex_4d = np.append(self.data.vertices[i], 1)
+                transformed_vertex = np.dot(rotation_matrix, vertex_4d)
+                self.data.vertices[i] = transformed_vertex[:3] + center
+
+
+        # 1. Calculate rotation axis and angle (details would depend on your desired behavior)
+        axis = self.calculate_rotation_axis(dx, dy)
+        angle = self.calculate_rotation_angle(dx, dy)
+
+        # 2. Create a quaternion representing the rotation
+        rotation_quaternion = self.create_quaternion_from_axis_angle(axis, angle)
+
+        # 3. Apply the rotation to the vertices
+        self.apply_quaternion_rotation(rotation_quaternion)
+
+    def apply_translation_from_mouse_delta(self, dx: float, dy: float):
+        """
+        Applies a translation to the object based on the change in mouse coordinates.
+
+        Args:
+            dx: The change in mouse position along the X-axis.
+            dy: The change in mouse position along the Y-axis.
+        """
+        # You might want to scale dx/dy by a factor for smoother movement
+        self.apply_translation(dx, dy, 0)  # Assuming no Z-axis translation
+
+    # ... Other helper functions like calculate_rotation_axis, calculate_rotation_angle, etc.
 
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     # glTranslatef(0.0, 0.0, -1.0)  # Move the triangle into the view
-    gluLookAt(0.0, 1.0, 1.0,  # Camera position
+    gluLookAt(0.0, 1.0, 0.0,  # Camera position
               0.0, 0.0, 0.0,  # Look at origin
               0.0, 1.0, 0.0)  # Up vector is Y-axis
 
@@ -204,11 +299,8 @@ if __name__ == "__main__":
     # Register the keyboard callback function for key press events
     glutKeyboardFunc(bunbun.handle_key_press)
 
-    # Register the keyboard callback function for key release events
-    glutKeyboardUpFunc(bunbun.handle_key_up)
-
     # Register the mouse motion callback function
-    glutMotionFunc(bunbun.handle_mouse_motion)
+    glutMotionFunc(bunbun.new_handle_mouse_motion)
 
     # Register the display callback function
     glutDisplayFunc(display)

@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch
 from Data import Data
+import numpy as np
+from main import Bunny
 
 class TestData(unittest.TestCase):
     def test_add_vertex(self):
@@ -26,6 +28,12 @@ class TestData(unittest.TestCase):
         data = Data()
         data.interactive_add_face()
         self.assertEqual(data.faces[0], [1, 2, 3])
+
+    def test_apply_rotation_originToAxis(self):
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

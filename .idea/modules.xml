@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/OpenGLCVBunny.iml" filepath="$PROJECT_DIR$/.idea/OpenGLCVBunny.iml" />
-      <module fileurl="file://$USER_HOME$/PycharmProjects/notebook.mchase.me/.idea/notebook-mchase-me.iml" filepath="$USER_HOME$/PycharmProjects/notebook.mchase.me/.idea/notebook-mchase-me.iml" />
     </modules>
   </component>
 </project>
